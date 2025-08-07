@@ -1,18 +1,27 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { ArrowLeft, Send, Bot, User, Shield, MapPin, Phone, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, Send, Bot, User, Shield, MapPin, Phone, AlertTriangle, ExternalLink, Mic, MicOff } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Card, CardContent } from '../components/ui/card';
+import { Badge } from '../components/ui/badge';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useSafety } from '../contexts/SafetyContext';
 import Navigation from '../components/Navigation';
+import { geminiChatAPI, type APIResponse } from '../services/geminiAPI';
 
 interface Message {
   id: string;
   type: 'user' | 'assistant';
   content: string;
   timestamp: Date;
+  confidence?: number;
+  suggestions?: string[];
+  actions?: Array<{
+    type: 'emergency' | 'location' | 'report' | 'tips';
+    label: string;
+    data?: any;
+  }>;
 }
 
 const Chat = () => {
@@ -29,6 +38,8 @@ const Chat = () => {
   ]);
   const [inputMessage, setInputMessage] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+  const [recognition, setRecognition] = useState<any>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -39,73 +50,60 @@ const Chat = () => {
     scrollToBottom();
   }, [messages]);
 
-  const safetyResponses = {
-    emergency: [
-      "I understand you might be in a dangerous situation. If you're in immediate danger, please use the emergency SOS button or call 10111 (SAPS) immediately.",
-      "Your safety is the priority. If you feel unsafe, trust your instincts. Would you like me to help you activate emergency mode or find the nearest safe location?"
-    ],
-    route: [
-      "I can help you plan a safer route! Based on current community reports, I recommend avoiding poorly lit areas and staying on main roads when possible.",
-      "For route planning, consider these safety factors: good lighting, populated areas, proximity to police stations or safe spaces. Would you like specific route suggestions?"
-    ],
-    harassment: [
-      "I'm sorry you're experiencing this. Your safety matters. Document everything if safe to do so, trust your instincts, and don't hesitate to report incidents.",
-      "Harassment is never acceptable. Consider using the fake call feature to exit uncomfortable situations, and always prioritize getting to a safe, public space."
-    ],
-    support: [
-      "Remember, you're not alone in this. The SafeStep community is here to support each other. You're brave for prioritizing your safety.",
-      "You have the right to feel safe. Trust your instincts, stay alert, and remember that seeking help is always the right choice."
-    ]
-  };
+  useEffect(() => {
+    // Initialize speech recognition
+    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+      const recognitionInstance = new SpeechRecognition();
+      
+      recognitionInstance.continuous = true; // Keep listening
+      recognitionInstance.interimResults = true; // Show real-time results
+      recognitionInstance.lang = 'en-US';
+      
+      recognitionInstance.onstart = () => {
+        setIsListening(true);
+        console.log('🎤 Voice recognition started');
+      };
+      
+      recognitionInstance.onresult = (event: any) => {
+        let transcript = '';
+        
+        // Get all recognized text (both interim and final)
+        for (let i = 0; i < event.results.length; i++) {
+          transcript += event.results[i][0].transcript;
+        }
+        
+        // Type directly in input field as user speaks
+        setInputMessage(transcript);
+      };
+      
+      recognitionInstance.onerror = (event: any) => {
+        console.error('🚫 Speech recognition error:', event.error);
+        if (event.error === 'no-speech') {
+          console.log('No speech detected, continuing...');
+        } else {
+          setIsListening(false);
+        }
+      };
+      
+      recognitionInstance.onend = () => {
+        console.log('🛑 Voice recognition ended');
+        setIsListening(false);
+      };
+      
+      setRecognition(recognitionInstance);
+    }
+  }, []);
 
-  const getAIResponse = (userMessage: string): string => {
-    const message = userMessage.toLowerCase();
-    
-    // Emergency keywords
-    if (message.includes('emergency') || message.includes('danger') || message.includes('help') || message.includes('scared')) {
-      return safetyResponses.emergency[Math.floor(Math.random() * safetyResponses.emergency.length)];
-    }
-    
-    // Route planning
-    if (message.includes('route') || message.includes('directions') || message.includes('safe path') || message.includes('way to')) {
-      return safetyResponses.route[Math.floor(Math.random() * safetyResponses.route.length)];
-    }
-    
-    // Harassment/safety concerns
-    if (message.includes('harassment') || message.includes('following') || message.includes('uncomfortable') || message.includes('catcall')) {
-      return safetyResponses.harassment[Math.floor(Math.random() * safetyResponses.harassment.length)];
-    }
-    
-    // Location-based responses
-    if (message.includes('location') || message.includes('where') || message.includes('area')) {
-      const risk = getCurrentLocationRisk();
-      return `Based on community reports, your current area has ${risk} risk level. ${
-        risk === 'high' ? 'Consider finding a well-lit, populated area or contacting someone you trust.' :
-        risk === 'medium' ? 'Stay alert and consider having someone track your location.' :
-        'This appears to be a relatively safe area, but always stay aware of your surroundings.'
-      }`;
-    }
-    
-    // General safety tips
-    if (message.includes('tip') || message.includes('advice') || message.includes('safe')) {
-      const tips = [
-        "Always let someone know your plans and expected arrival time. Use Guardian Mode to share your live location with trusted contacts.",
-        "Trust your instincts - if something feels wrong, it probably is. Don't worry about being polite if you feel unsafe.",
-        "Keep your phone charged and have emergency contacts readily available. Consider carrying a portable charger.",
-        "Stay in well-lit, populated areas when possible. Avoid wearing headphones that completely block out surrounding sounds.",
-        "Have a plan before you leave. Know where the nearest police stations, hospitals, and safe spaces are located."
-      ];
-      return tips[Math.floor(Math.random() * tips.length)];
-    }
-    
-    // Default supportive response
-    return safetyResponses.support[Math.floor(Math.random() * safetyResponses.support.length)];
-  };
+  // Update user context based on location risk
+  useEffect(() => {
+    const risk = getCurrentLocationRisk();
+    geminiChatAPI.updateUserContext({ riskLevel: risk });
+  }, [getCurrentLocationRisk]);
 
   const handleSendMessage = async () => {
     if (!inputMessage.trim()) return;
 
-    // Add user message
     const userMessage: Message = {
       id: Date.now().toString(),
       type: 'user',
@@ -114,21 +112,84 @@ const Chat = () => {
     };
 
     setMessages(prev => [...prev, userMessage]);
+    const currentInput = inputMessage;
     setInputMessage('');
     setIsTyping(true);
 
-    // Simulate AI response delay
-    setTimeout(() => {
+    try {
+      // Convert messages to API format
+      const conversationHistory = messages.map(msg => ({
+        role: msg.type === 'user' ? 'user' as const : 'assistant' as const,
+        content: msg.content,
+        timestamp: msg.timestamp
+      }));
+
+      const response = await geminiChatAPI.sendMessage(currentInput);
+      
       const aiResponse: Message = {
         id: (Date.now() + 1).toString(),
         type: 'assistant',
-        content: getAIResponse(inputMessage),
-        timestamp: new Date()
+        content: response.message,
+        timestamp: new Date(),
+        confidence: response.confidence,
+        suggestions: response.suggestions,
+        actions: response.actions
       };
 
       setMessages(prev => [...prev, aiResponse]);
+    } catch (error) {
+      const errorResponse: Message = {
+        id: (Date.now() + 1).toString(),
+        type: 'assistant',
+        content: "I'm having trouble connecting right now. Please try again or use the emergency button if you need immediate help.",
+        timestamp: new Date()
+      };
+      setMessages(prev => [...prev, errorResponse]);
+    } finally {
       setIsTyping(false);
-    }, 1000 + Math.random() * 2000);
+    }
+  };
+
+  const handleActionClick = (action: any) => {
+    switch (action.type) {
+      case 'emergency':
+        if (action.data?.action === 'sos') {
+          activateEmergency();
+        } else if (action.data?.action === 'mark_safe') {
+          geminiChatAPI.resetEmergencyMode();
+          setInputMessage("I'm safe now");
+        }
+        break;
+      case 'location':
+        if (action.data?.action === 'share_location') {
+          // Trigger location sharing
+          setInputMessage("Share my location with emergency contacts");
+        }
+        break;
+      case 'report':
+        navigate('/community');
+        break;
+      case 'tips':
+        setInputMessage("Give me more safety tips");
+        break;
+    }
+  };
+
+  const handleSuggestionClick = (suggestion: string) => {
+    setInputMessage(suggestion);
+  };
+
+  const toggleVoiceRecognition = () => {
+    if (!recognition) {
+      alert('Voice recognition not supported in this browser');
+      return;
+    }
+
+    if (isListening) {
+      recognition.stop();
+    } else {
+      recognition.start();
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -204,6 +265,54 @@ const Chat = () => {
                   )}
                   <div className="flex-1">
                     <p className="text-sm">{message.content}</p>
+                    
+                    {/* Confidence indicator for AI responses */}
+                    {message.type === 'assistant' && message.confidence && (
+                      <div className="mt-2">
+                        <Badge variant="outline" className="text-xs">
+                          Confidence: {Math.round(message.confidence * 100)}%
+                        </Badge>
+                      </div>
+                    )}
+                    
+                    {/* Action buttons */}
+                    {message.actions && message.actions.length > 0 && (
+                      <div className="mt-2 flex flex-wrap gap-1">
+                        {message.actions.map((action, idx) => (
+                          <Button
+                            key={idx}
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleActionClick(action)}
+                            className="text-xs h-7"
+                          >
+                            {action.label}
+                            <ExternalLink size={12} className="ml-1" />
+                          </Button>
+                        ))}
+                      </div>
+                    )}
+                    
+                    {/* Suggestions */}
+                    {message.suggestions && message.suggestions.length > 0 && (
+                      <div className="mt-2">
+                        <p className="text-xs text-muted-foreground mb-1">Quick suggestions:</p>
+                        <div className="flex flex-wrap gap-1">
+                          {message.suggestions.map((suggestion, idx) => (
+                            <Button
+                              key={idx}
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => handleSuggestionClick(suggestion)}
+                              className="text-xs h-6 px-2 text-primary hover:bg-primary/10"
+                            >
+                              {suggestion}
+                            </Button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    
                     <span className={`text-xs ${
                       message.type === 'user' ? 'text-white/70' : 'text-muted-foreground'
                     } mt-1 block`}>
@@ -259,9 +368,18 @@ const Chat = () => {
             value={inputMessage}
             onChange={(e) => setInputMessage(e.target.value)}
             onKeyPress={handleKeyPress}
-            placeholder="Type your message..."
+            placeholder={isListening ? "Listening..." : "Type or speak your message..."}
             className="flex-1"
+            disabled={isListening}
           />
+          <Button 
+            onClick={toggleVoiceRecognition}
+            disabled={isTyping}
+            className={`${isListening ? 'bg-red-500 hover:bg-red-600' : 'bg-gray-500 hover:bg-gray-600'} text-white`}
+            title={isListening ? "Stop listening" : "Start voice input"}
+          >
+            {isListening ? <MicOff size={20} /> : <Mic size={20} />}
+          </Button>
           <Button 
             onClick={handleSendMessage}
             disabled={!inputMessage.trim() || isTyping}
