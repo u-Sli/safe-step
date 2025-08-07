@@ -26,6 +26,7 @@ export default {
 				foreground: 'hsl(var(--foreground))',
 				primary: {
 					DEFAULT: 'hsl(var(--primary))',
+					glow: 'hsl(var(--primary-glow))',
 					foreground: 'hsl(var(--primary-foreground))'
 				},
 				secondary: {
@@ -52,6 +53,17 @@ export default {
 					DEFAULT: 'hsl(var(--card))',
 					foreground: 'hsl(var(--card-foreground))'
 				},
+				// SafeStep Brand Colors
+				'sa-green': 'hsl(var(--sa-green))',
+				'sa-blue': 'hsl(var(--sa-blue))',
+				'sa-red': 'hsl(var(--sa-red))',
+				'sa-black': 'hsl(var(--sa-black))',
+				'sa-white': 'hsl(var(--sa-white))',
+				// Safety Status Colors
+				success: 'hsl(var(--success))',
+				warning: 'hsl(var(--warning))',
+				danger: 'hsl(var(--danger))',
+				safe: 'hsl(var(--safe))',
 				sidebar: {
 					DEFAULT: 'hsl(var(--sidebar-background))',
 					foreground: 'hsl(var(--sidebar-foreground))',
