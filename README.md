@@ -1,73 +1,61 @@
-# Welcome to your Lovable project
+SafeStep – A Women’s Safety Mobile App
+Problem Statement
+In South Africa and many other parts of the world, women face daily safety risks while commuting, walking alone, or navigating unfamiliar areas. There is a lack of real-time safety guidance, community-driven awareness, and quick-response systems made specifically for women. Most safety apps are generic, do not validate users, and lack smart prevention tools. This creates an urgent need for a women-only, verified, smart safety platforms.
+Solution: SafeStep
+SafeStep is a mobile safety app designed exclusively for women that uses real-time data, community reports, and smart safety tools to help users navigate safer routes, send rapid SOS alerts, and connect with trusted contacts. The app also includes a South African ID-based gender verification system to maintain a secure, women-only space.
+Core Features
+Women-Only Registration via SA ID Validation
+•	Requires users to enter their South African ID number during sign-up.
+•	Extracts digits 7–10 to determine gender:
+•	- If 0000–4999 → Female (Access Granted)
+•	- If 5000–9999 → Male (Access Denied)
+•	Ensures platform is exclusive to verified women, improving trust and safety.
+Smart Safe Route Finder
+•	Interactive map with color-coded route safety levels (Green = safer, Red = risk zones).
+•	Integrates live data from community reports and crime patterns.
+•	Offers “Safest Route” option alongside shortest/fastest.
+SOS Emergency Button
+•	Sends live GPS location to emergency contacts and nearest police station.
+•	Triggers optional silent audio/video recording during emergencies.
+Guardian Mode
+•	Let’s users share their live location with trusted contacts while traveling.
+•	Option for “I’ve arrived safely” notifications.
+•	Timer-based check-ins prompt users if they haven’t confirmed their safety.
+Community Safety Feed
+•	Users can report incidents like harassment, poor lighting, suspicious activity.
+•	Map pins show recent reports (auto-expire after 48 hours).
+•	Like/upvote system to validate report credibility.
+Bonus & Unique Features
+Fake Call Function
+Simulates a realistic phone call from a friend or relative to escape awkward or dangerous encounters.
+Panic Phrase Activation
+A secret keyword or phrase (e.g., “I forgot my charger”) activates the SOS function silently.
+Safety Education Hub
+Tips, video clips, and guides on self-defense, safety rights, and situational awareness. Along with community chatrooms.
 
-## Project info
 
-**URL**: https://lovable.dev/projects/1fbba1ec-648b-42ba-9af5-2712434f42af
-
-## How can I edit this code?
-
-There are several ways of editing your application.
-
-**Use Lovable**
-
-Simply visit the [Lovable Project](https://lovable.dev/projects/1fbba1ec-648b-42ba-9af5-2712434f42af) and start prompting.
-
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
-
-**Edit a file directly in GitHub**
-
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
-
-**Use GitHub Codespaces**
-
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/1fbba1ec-648b-42ba-9af5-2712434f42af) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+Offline Safety Mode
+•	Download safe maps that include safe zones such as police stations, clinics for navigation without internet access. 
+•	Emergency SOS that uses a SMS-based messaging to send the user’s last known location to the added emergency contacts and authorities.
+•	Offline journal whereby the user can log any encounters and when back online, these entries can be reported
+Battery Saving Mode
+Lightweight version disables visuals but keeps tracking and SOS active.
+Technology that can be utilized
+Feature	Technology/Tool
+Mobile Framework	React Native
+Maps & Navigation	Google Maps API / react-native-maps
+Real-Time Database	Firebase Realtime DB
+Authentication	Firebase Auth / Custom SA ID logic
+Push Notifications	Firebase Cloud Messaging
+Location Services	react-native-geolocation-service
+Audio/Video Recording (SOS)	react-native-camera, AudioRecord
+Storage & Offline Sync	AsyncStorage / SQLite
+Future Ideas & Scalability
+•	Expand to other countries with local ID-based verification
+•	Partner with local law enforcement for verified report input
+•	Add AI-based threat zone prediction based on past data
+Impact
+SafeStep aims to:
+- Create a community of empowered women who support each other.
+- Reduce the risk of harm through prevention, awareness, and fast intervention.
+- Offer a practical, data-driven tool to navigate daily life more confidently.
