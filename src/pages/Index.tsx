@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Shield, MapPin, Users, MessageCircle, Phone, AlertTriangle, Heart, Star } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 import AuthPage from "@/components/AuthPage";
 import Dashboard from "@/components/Dashboard";
 // import saFlagBg from "@/assets/sa-flag-bg.jpg";
@@ -15,6 +16,16 @@ const Index = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [showAuth, setShowAuth] = useState(false);
   const { toast } = useToast();
+
+  const testDatabase = async () => {
+    try {
+      const { data, error } = await supabase.from('test_table').insert({ message: 'Hello from SafeStep!' });
+      if (error) throw error;
+      toast({ title: "✅ Database test successful!", description: "Check Supabase logs" });
+    } catch (error) {
+      toast({ title: "❌ Database test failed", description: error.message });
+    }
+  };
 
   if (isAuthenticated) {
     return <Dashboard />;
@@ -57,6 +68,15 @@ const Index = () => {
               >
                 <Heart className="w-6 h-6" />
                 Learn More
+              </Button>
+              <Button 
+                size="sm" 
+                variant="outline"
+                onClick={testDatabase}
+                className="animate-slide-up bg-white/20 text-white border-white/30"
+                style={{ animationDelay: '0.2s' }}
+              >
+                Test DB
               </Button>
             </div>
           </div>

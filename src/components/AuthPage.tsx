@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, Shield, CheckCircle, AlertCircle, User, Mail, Phone, Lock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 import safestepLogo from "@/assets/safestep-logo.png";
 
 interface AuthPageProps {
@@ -72,7 +73,7 @@ const AuthPage = ({ onAuthSuccess, onBack }: AuthPageProps) => {
     }
   };
 
-  const handleSignUp = () => {
+  const handleSignUp = async () => {
     if (idValidation.status !== 'valid') {
       toast({
         title: "Verification Required",
@@ -91,20 +92,62 @@ const AuthPage = ({ onAuthSuccess, onBack }: AuthPageProps) => {
       return;
     }
 
-    // Simulate registration
-    toast({
-      title: "Welcome to SafeStep! 🎉",
-      description: "Your account has been created successfully",
-    });
-    onAuthSuccess();
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email: formData.email,
+        password: formData.password,
+        options: {
+          data: {
+            first_name: formData.firstName,
+            last_name: formData.lastName,
+            phone: formData.phone,
+            id_number: formData.idNumber,
+            emergency_contact_1: formData.emergencyContact1,
+            emergency_contact_2: formData.emergencyContact2
+          }
+        }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Welcome to SafeStep! 🎉",
+        description: "Your account has been created successfully",
+      });
+      onAuthSuccess();
+    } catch (error) {
+      toast({
+        title: "Registration Failed",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
   };
 
-  const handleSignIn = () => {
-    toast({
-      title: "Welcome back! 👋",
-      description: "You're now signed in to SafeStep",
-    });
-    onAuthSuccess();
+  const handleSignIn = async () => {
+    const email = (document.getElementById('signin-email') as HTMLInputElement)?.value;
+    const password = (document.getElementById('signin-password') as HTMLInputElement)?.value;
+
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Welcome back! 👋",
+        description: "You're now signed in to SafeStep",
+      });
+      onAuthSuccess();
+    } catch (error) {
+      toast({
+        title: "Sign In Failed",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
   };
 
   return (
