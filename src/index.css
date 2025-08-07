@@ -2,41 +2,75 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
+/* SafeStep Design System - Pink/Yellow theme with SA flag colors */
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* SafeStep Brand Colors - Pink & Yellow with SA Flag Integration */
+    --background: 350 15% 98%;
+    --foreground: 340 90% 15%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 340 90% 15%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 340 90% 15%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    /* Primary: Deep Pink (SA Flag inspired) */
+    --primary: 340 85% 55%;
+    --primary-foreground: 0 0% 100%;
+    --primary-hover: 340 85% 45%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    /* Secondary: Warm Yellow (SA Flag) */
+    --secondary: 45 95% 65%;
+    --secondary-foreground: 340 90% 15%;
+    --secondary-hover: 45 95% 55%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    /* Success: SA Flag Green */
+    --success: 120 65% 45%;
+    --success-foreground: 0 0% 100%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    /* Warning: Safety Orange */
+    --warning: 25 95% 60%;
+    --warning-foreground: 340 90% 15%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    /* Danger: Emergency Red */
+    --danger: 0 85% 60%;
+    --danger-foreground: 0 0% 100%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    /* SA Flag Blue accent */
+    --accent-blue: 220 85% 45%;
+    --accent-blue-foreground: 0 0% 100%;
 
-    --radius: 0.5rem;
+    --muted: 350 20% 95%;
+    --muted-foreground: 340 30% 45%;
+
+    --accent: 45 85% 85%;
+    --accent-foreground: 340 90% 15%;
+
+    --destructive: 0 85% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 340 25% 90%;
+    --input: 340 15% 95%;
+    --ring: 340 85% 55%;
+
+    --radius: 0.75rem;
+
+    /* SafeStep Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--secondary)));
+    --gradient-hero: linear-gradient(135deg, hsl(340 85% 55%), hsl(45 95% 65%), hsl(120 65% 45%));
+    --gradient-safety: linear-gradient(90deg, hsl(var(--success)), hsl(var(--secondary)));
+    --gradient-emergency: linear-gradient(135deg, hsl(var(--danger)), hsl(var(--warning)));
+    
+    /* Shadows */
+    --shadow-soft: 0 4px 20px hsl(340 85% 55% / 0.15);
+    --shadow-strong: 0 8px 30px hsl(340 85% 55% / 0.25);
+    --shadow-emergency: 0 6px 25px hsl(0 85% 60% / 0.3);
+
+    /* Animations */
+    --animation-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --animation-bounce: bounce 0.6s ease-in-out;
 
     --sidebar-background: 0 0% 98%;
 
@@ -56,41 +90,52 @@ All colors MUST be HSL.
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
+    --background: 340 20% 8%;
+    --foreground: 350 20% 95%;
 
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
+    --card: 340 15% 12%;
+    --card-foreground: 350 20% 95%;
 
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 340 15% 12%;
+    --popover-foreground: 350 20% 95%;
 
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+    --primary: 340 80% 65%;
+    --primary-foreground: 340 20% 8%;
+    --primary-hover: 340 80% 55%;
 
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 45 85% 75%;
+    --secondary-foreground: 340 20% 8%;
+    --secondary-hover: 45 85% 65%;
 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --success: 120 60% 55%;
+    --success-foreground: 340 20% 8%;
 
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
+    --warning: 25 90% 70%;
+    --warning-foreground: 340 20% 8%;
 
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
+    --danger: 0 80% 70%;
+    --danger-foreground: 340 20% 8%;
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --accent-blue: 220 80% 55%;
+    --accent-blue-foreground: 340 20% 8%;
+
+    --muted: 340 15% 15%;
+    --muted-foreground: 340 20% 70%;
+
+    --accent: 340 15% 15%;
+    --accent-foreground: 350 20% 95%;
+
+    --destructive: 0 80% 70%;
+    --destructive-foreground: 340 20% 8%;
+
+    --border: 340 15% 20%;
+    --input: 340 15% 15%;
+    --ring: 340 80% 65%;
+
+    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--secondary)));
+    --gradient-hero: linear-gradient(135deg, hsl(340 80% 65%), hsl(45 85% 75%), hsl(120 60% 55%));
+    --gradient-safety: linear-gradient(90deg, hsl(var(--success)), hsl(var(--secondary)));
+    --gradient-emergency: linear-gradient(135deg, hsl(var(--danger)), hsl(var(--warning)));
   }
 }
 
@@ -100,6 +145,64 @@ All colors MUST be HSL.
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans;
+  }
+
+  /* SafeStep Custom Animations */
+  @keyframes pulse-emergency {
+    0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 hsl(var(--danger) / 0.7); }
+    50% { transform: scale(1.05); box-shadow: 0 0 0 10px hsl(var(--danger) / 0); }
+  }
+
+  @keyframes slide-up {
+    from { transform: translateY(20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  .animate-pulse-emergency {
+    animation: pulse-emergency 1.5s infinite;
+  }
+
+  .animate-slide-up {
+    animation: slide-up 0.6s ease-out;
+  }
+
+  .animate-fade-in {
+    animation: fade-in 0.4s ease-out;
+  }
+
+  /* Custom gradient backgrounds */
+  .bg-gradient-primary {
+    background: var(--gradient-primary);
+  }
+
+  .bg-gradient-hero {
+    background: var(--gradient-hero);
+  }
+
+  .bg-gradient-safety {
+    background: var(--gradient-safety);
+  }
+
+  .bg-gradient-emergency {
+    background: var(--gradient-emergency);
+  }
+
+  /* Custom shadows */
+  .shadow-soft {
+    box-shadow: var(--shadow-soft);
+  }
+
+  .shadow-strong {
+    box-shadow: var(--shadow-strong);
+  }
+
+  .shadow-emergency {
+    box-shadow: var(--shadow-emergency);
   }
 }
