@@ -1,20 +1,24 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { ArrowLeft, Navigation, MapPin, AlertTriangle, Shield } from 'lucide-react';
+import { ArrowLeft, Navigation, MapPin, AlertTriangle, Shield, Clock, Route } from 'lucide-react';
 import { Button } from '../components/ui/button';
-import { Input } from '../components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
 import { useNavigate } from 'react-router-dom';
 import { useSafety } from '../contexts/SafetyContext';
 import NavBar from '../components/Navigation';
+import RouteMap from '../components/RouteMap';
+import LocationInput from '../components/LocationInput';
+import { routeService, type RouteOption, type RoutePoint } from '../services/routeService';
+import { type LocationSuggestion } from '../services/locationService';
 
 const SafeRoutes = () => {
   const navigate = useNavigate();
   const { userLocation, safetyReports, getCurrentLocationRisk } = useSafety();
   const [destination, setDestination] = useState('');
-  const [mapboxToken, setMapboxToken] = useState('');
-  const [showTokenInput, setShowTokenInput] = useState(true);
-  const mapContainer = useRef<HTMLDivElement>(null);
+  const [routes, setRoutes] = useState<RouteOption[]>([]);
+  const [selectedRoute, setSelectedRoute] = useState<RouteOption | null>(null);
+  const [isCalculating, setIsCalculating] = useState(false);
+  const [destinationCoords, setDestinationCoords] = useState<RoutePoint | null>(null);
 
   const currentRisk = getCurrentLocationRisk();
   const nearbyReports = safetyReports.slice(0, 5);
@@ -25,24 +29,55 @@ const SafeRoutes = () => {
     high: 'bg-danger text-white'
   };
 
-  const initializeMap = () => {
-    if (!mapboxToken) {
-      setShowTokenInput(true);
-      return;
+  const handleGetDirections = async () => {
+    if (!destination.trim() || !userLocation) return;
+    
+    setIsCalculating(true);
+    setRoutes([]);
+    setSelectedRoute(null);
+    
+    try {
+      // Use real coordinates from location service
+      let destCoords: RoutePoint;
+      
+      // Try to find exact coordinates from location service
+      const locationResults = await import('../services/locationService').then(module => 
+        module.locationService.searchLocations(destination)
+      );
+      
+      if (locationResults.length > 0 && locationResults[0].coordinates) {
+        destCoords = locationResults[0].coordinates;
+      } else {
+        // Fallback to approximate coordinates
+        destCoords = {
+          lat: userLocation.lat + (Math.random() - 0.5) * 0.02,
+          lng: userLocation.lng + (Math.random() - 0.5) * 0.02
+        };
+      }
+      
+      setDestinationCoords(destCoords);
+      
+      const calculatedRoutes = await routeService.calculateRoutes(
+        { lat: userLocation.lat, lng: userLocation.lng },
+        destCoords
+      );
+      
+      setRoutes(calculatedRoutes);
+      setSelectedRoute(calculatedRoutes[0]); // Default to safest route
+    } catch (error) {
+      console.error('Error calculating routes:', error);
+    } finally {
+      setIsCalculating(false);
     }
-
-    // In a real app, this would initialize Mapbox GL JS
-    console.log('Map initialized with token:', mapboxToken);
-    setShowTokenInput(false);
   };
 
-  const handleGetDirections = () => {
-    if (!destination.trim()) return;
-    
-    // In a real app, this would calculate routes with safety considerations
-    console.log('Getting safe route to:', destination);
-    console.log('Current location:', userLocation);
-    console.log('Safety reports considered:', nearbyReports.length);
+  const handleRouteSelect = (route: RouteOption) => {
+    setSelectedRoute(route);
+  };
+
+  const handleButtonRouteSelect = (route: RouteOption) => {
+    setSelectedRoute(route);
+    handleRouteSelect(route);
   };
 
   return (
@@ -93,75 +128,87 @@ const SafeRoutes = () => {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div>
-              <Input
-                placeholder="Where are you going?"
-                value={destination}
-                onChange={(e) => setDestination(e.target.value)}
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <Button 
-                onClick={handleGetDirections}
-                className="bg-gradient-to-r from-safe to-success text-white"
-                disabled={!destination.trim()}
-              >
-                Safest Route
-              </Button>
-              <Button 
-                variant="outline"
-                onClick={handleGetDirections}
-                disabled={!destination.trim()}
-              >
-                Fastest Route
-              </Button>
-            </div>
+            <LocationInput
+              value={destination}
+              onChange={setDestination}
+              onLocationSelect={(location: LocationSuggestion) => {
+                setDestination(location.name);
+                // Auto-trigger route calculation when location is selected
+                setTimeout(() => handleGetDirections(), 100);
+              }}
+              placeholder="Where are you going?"
+            />
+            <Button 
+              onClick={handleGetDirections}
+              disabled={!destination.trim() || isCalculating}
+              className="w-full bg-gradient-to-r from-primary to-accent text-white"
+            >
+              {isCalculating ? 'Calculating Routes...' : 'Get Directions'}
+            </Button>
           </CardContent>
         </Card>
 
-        {/* Mapbox Token Input - Demo purposes */}
-        {showTokenInput && (
-          <Card className="border-accent/20">
-            <CardHeader>
-              <CardTitle className="text-accent">Map Setup Required</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <p className="text-sm text-muted-foreground">
-                To display interactive maps, please enter your Mapbox public token.
-                Get one free at mapbox.com
-              </p>
-              <Input
-                placeholder="Enter Mapbox public token"
-                value={mapboxToken}
-                onChange={(e) => setMapboxToken(e.target.value)}
-              />
-              <Button onClick={initializeMap} disabled={!mapboxToken.trim()}>
-                Initialize Map
-              </Button>
-            </CardContent>
-          </Card>
+        {/* Route Options */}
+        {routes.length > 0 && (
+          <div className="grid grid-cols-2 gap-3">
+            {routes.map((route) => (
+              <Card 
+                key={route.id}
+                className={`cursor-pointer transition-all ${
+                  selectedRoute?.id === route.id 
+                    ? 'ring-2 ring-primary shadow-md' 
+                    : 'hover:shadow-sm'
+                }`}
+                onClick={() => handleButtonRouteSelect(route)}
+              >
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div 
+                      className="w-4 h-4 rounded-full"
+                      style={{ backgroundColor: route.color }}
+                    />
+                    <span className="font-medium capitalize">{route.type} Route</span>
+                  </div>
+                  <div className="space-y-1 text-sm">
+                    <div className="flex items-center gap-2">
+                      <Route size={14} className="text-muted-foreground" />
+                      <span>{route.distance}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Clock size={14} className="text-muted-foreground" />
+                      <span>{route.duration}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Shield size={14} className="text-muted-foreground" />
+                      <span>Safety: {route.safetyScore}/10</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
         )}
 
         {/* Map Container */}
         <Card>
-          <CardContent className="p-0">
-            <div 
-              ref={mapContainer}
-              className="h-64 bg-gradient-to-br from-muted to-muted/50 rounded-lg flex items-center justify-center"
-            >
-              {showTokenInput ? (
+          <CardContent className="p-4">
+            {routes.length > 0 ? (
+              <RouteMap 
+                routes={routes}
+                origin={userLocation ? { lat: userLocation.lat, lng: userLocation.lng } : undefined}
+                destination={destinationCoords || undefined}
+                onRouteSelect={handleRouteSelect}
+                selectedRoute={selectedRoute}
+              />
+            ) : (
+              <div className="h-64 bg-gradient-to-br from-muted to-muted/50 rounded-lg flex items-center justify-center">
                 <div className="text-center text-muted-foreground">
                   <MapPin size={48} className="mx-auto mb-2 opacity-50" />
-                  <p>Map will appear here after setup</p>
+                  <p>Enter a destination to see route options</p>
+                  <p className="text-sm mt-1">🟢 Green = Safest Route | 🔵 Blue = Fastest Route</p>
                 </div>
-              ) : (
-                <div className="text-center text-muted-foreground">
-                  <Navigation size={48} className="mx-auto mb-2 opacity-50" />
-                  <p>Interactive safety map</p>
-                  <p className="text-sm">Route planning with real-time safety data</p>
-                </div>
-              )}
-            </div>
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -197,6 +244,52 @@ const SafeRoutes = () => {
           </CardContent>
         </Card>
 
+        {/* Selected Route Details */}
+        {selectedRoute && (
+          <Card className="bg-gradient-to-br from-primary/5 to-accent/5">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <div 
+                  className="w-4 h-4 rounded-full"
+                  style={{ backgroundColor: selectedRoute.color }}
+                />
+                {selectedRoute.type.charAt(0).toUpperCase() + selectedRoute.type.slice(1)} Route Details
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                <div className="grid grid-cols-3 gap-4 text-center">
+                  <div>
+                    <div className="text-lg font-bold">{selectedRoute.distance}</div>
+                    <div className="text-xs text-muted-foreground">Distance</div>
+                  </div>
+                  <div>
+                    <div className="text-lg font-bold">{selectedRoute.duration}</div>
+                    <div className="text-xs text-muted-foreground">Duration</div>
+                  </div>
+                  <div>
+                    <div className="text-lg font-bold">{selectedRoute.safetyScore}/10</div>
+                    <div className="text-xs text-muted-foreground">Safety Score</div>
+                  </div>
+                </div>
+                <div>
+                  <h4 className="font-medium mb-2">Route Information:</h4>
+                  <ul className="space-y-1 text-sm">
+                    {selectedRoute.warnings.map((warning, index) => (
+                      <li key={index} className="flex items-start gap-2">
+                        <div className={`w-2 h-2 rounded-full mt-1.5 ${
+                          selectedRoute.type === 'safest' ? 'bg-green-500' : 'bg-blue-500'
+                        }`} />
+                        <span>{warning}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Safety Tips */}
         <Card className="bg-gradient-to-br from-primary/5 to-accent/5">
           <CardHeader>
@@ -206,15 +299,15 @@ const SafeRoutes = () => {
             <ul className="space-y-2 text-sm">
               <li className="flex items-start gap-2">
                 <Shield size={16} className="text-safe mt-0.5" />
-                <span>Choose well-lit, populated routes when possible</span>
+                <span>🟢 Safest routes prioritize well-lit, populated areas</span>
               </li>
               <li className="flex items-start gap-2">
                 <Navigation size={16} className="text-primary mt-0.5" />
-                <span>Share your route with trusted contacts</span>
+                <span>🔵 Fastest routes save time but may have safety trade-offs</span>
               </li>
               <li className="flex items-start gap-2">
                 <AlertTriangle size={16} className="text-warning mt-0.5" />
-                <span>Trust your instincts - change route if something feels wrong</span>
+                <span>Always trust your instincts and change route if needed</span>
               </li>
             </ul>
           </CardContent>
